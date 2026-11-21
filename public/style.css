@@ -1,0 +1,158 @@
+:root {
+  --bg: #f6f4ef;
+  --surface: #ffffff;
+  --text: #1d1b22;
+  --muted: #6b6676;
+  --border: #e3dfd6;
+  --accent: #7a4dd8;
+  --accent-text: #ffffff;
+  --gold: #b8860b;
+  --user-bg: #efe9fb;
+  --code-bg: #f1eee8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121019;
+    --surface: #1c1926;
+    --text: #ece9f3;
+    --muted: #a39dB3;
+    --border: #2e2a3b;
+    --accent: #9b74f0;
+    --accent-text: #120f1a;
+    --gold: #e0b44c;
+    --user-bg: #2a2340;
+    --code-bg: #26222f;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121019;
+  --surface: #1c1926;
+  --text: #ece9f3;
+  --muted: #a39db3;
+  --border: #2e2a3b;
+  --accent: #9b74f0;
+  --accent-text: #120f1a;
+  --gold: #e0b44c;
+  --user-bg: #2a2340;
+  --code-bg: #26222f;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; gap: 12px; align-items: center; }
+.logo { font-size: 30px; }
+h1 { margin: 0; font-size: 1.35rem; letter-spacing: .01em; }
+.tagline { margin: 0; color: var(--muted); font-size: .9rem; }
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+button.ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+}
+button.ghost:hover { border-color: var(--accent); }
+
+main { flex: 1; padding: 20px 0; display: flex; flex-direction: column; gap: 16px; }
+
+.welcome h2 { margin: 8px 0 4px; font-size: 1.2rem; }
+.welcome p { color: var(--muted); margin: 0 0 16px; }
+.examples { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  text-align: left;
+  font-size: .92rem;
+}
+.chip:hover { border-color: var(--accent); }
+
+.msg { padding: 14px 16px; border-radius: 14px; overflow-wrap: anywhere; }
+.msg.user {
+  background: var(--user-bg);
+  align-self: flex-end;
+  max-width: 85%;
+  white-space: pre-wrap;
+}
+.msg.bot {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.msg.bot p:first-child { margin-top: 0; }
+.msg.bot p:last-child { margin-bottom: 0; }
+.msg.bot code { background: var(--code-bg); padding: 1px 5px; border-radius: 5px; }
+.msg.bot pre { background: var(--code-bg); padding: 10px; border-radius: 8px; overflow-x: auto; }
+.msg.bot a { color: var(--accent); }
+.msg.bot table { border-collapse: collapse; display: block; overflow-x: auto; }
+.msg.bot th, .msg.bot td { border: 1px solid var(--border); padding: 4px 8px; }
+.msg.error { border-color: #c0392b; color: #c0392b; }
+
+.status {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--muted); font-size: .9rem; font-style: italic;
+}
+.status::before {
+  content: ""; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--gold); animation: pulse 1s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: .25; } }
+
+.composer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 8px;
+  padding: 12px 0 6px;
+  background: var(--bg);
+}
+textarea {
+  flex: 1;
+  resize: vertical;
+  min-height: 52px;
+  max-height: 240px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+}
+textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+#send {
+  background: var(--accent);
+  color: var(--accent-text);
+  padding: 0 20px;
+  font-weight: 600;
+}
+#send:disabled { opacity: .5; cursor: progress; }
+.disclaimer { color: var(--muted); font-size: .78rem; text-align: center; margin: 0 0 12px; }
+
+@media (max-width: 520px) {
+  .tagline { display: none; }
+  .msg.user { max-width: 100%; }
+}
