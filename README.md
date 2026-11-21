@@ -1,4 +1,6 @@
-# ⚖️ Ruling Bot — Yu-Gi-Oh!
+# YuGiOh Ruling App
+
+<img src="icons/icon-192.png" alt="" width="96">
 
 Sito **statico e gratuito** per cercare i ruling di Yu-Gi-Oh!: nessuna IA, nessun server, nessuna chiave API.
 

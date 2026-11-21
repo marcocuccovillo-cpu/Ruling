@@ -1,4 +1,4 @@
-// Ruling Bot — versione statica: ricerca locale su FAQ e regolamento + testo carte da YGOPRODeck.
+// YuGiOh Ruling App — versione statica: ricerca locale su FAQ e regolamento + testo carte da YGOPRODeck.
 "use strict";
 
 const KNOWLEDGE_FILES = [
@@ -478,13 +478,26 @@ function cardStats(c) {
   if (c.linkval != null) bits.push(`Link-${c.linkval}`);
   if (c.scale != null) bits.push(`Scala ${c.scale}`);
   if (c.atk != null) bits.push(`ATK ${c.atk}` + (c.def != null ? ` / DEF ${c.def}` : ""));
-  return bits.join(" · ");
+  if (c.archetype) bits.push(c.archetype);
+  return bits.filter(Boolean);
+}
+
+// Colore della cornice in base al tipo di carta
+function cardKind(type = "") {
+  const t = type.toLowerCase();
+  if (t.includes("spell")) return "spell";
+  if (t.includes("trap")) return "trap";
+  if (t.includes("token")) return "token";
+  if (t.includes("pendulum")) return "pendulum";
+  for (const k of ["link", "xyz", "synchro", "fusion", "ritual", "normal"]) if (t.includes(k)) return k;
+  return "effect";
 }
 
 const formatDesc = (t) => esc(t).replace(/\n/g, "<br>");
 
 function renderCard(c, container) {
   const box = el("article", "card");
+  box.dataset.kind = cardKind(c.type);
   const title = c.itName || c.name;
   const sub = c.itName && c.name && c.itName !== c.name ? `<p class="en">${esc(c.name)}</p>` : "";
   const mainDesc = c.itDesc || c.desc;
@@ -492,11 +505,11 @@ function renderCard(c, container) {
     ? `<details class="en-text"><summary>Testo inglese</summary><p class="desc">${formatDesc(c.desc)}</p></details>` : "";
   const en = c.name || c.itName;
   const wiki = encodeURIComponent(en.replace(/ /g, "_"));
-  box.innerHTML = `<h3>${esc(title)}</h3>${sub}<p class="stats">${esc(cardStats(c))}</p>
+  box.innerHTML = `<h3>${esc(title)}</h3>${sub}<ul class="stats">${cardStats(c).map((b) => `<li>${esc(b)}</li>`).join("")}</ul>
     <p class="desc">${formatDesc(mainDesc)}</p>${enDesc}
     <p class="links">
-      <a href="https://yugipedia.com/wiki/Card_Rulings:${wiki}" target="_blank" rel="noopener">Ruling (Yugipedia)</a> ·
-      <a href="https://yugipedia.com/wiki/${wiki}" target="_blank" rel="noopener">Scheda</a> ·
+      <a href="https://yugipedia.com/wiki/Card_Rulings:${wiki}" target="_blank" rel="noopener">Ruling (Yugipedia)</a>
+      <a href="https://yugipedia.com/wiki/${wiki}" target="_blank" rel="noopener">Scheda</a>
       <a href="https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=1&sess=1&keyword=${encodeURIComponent(en)}&request_locale=it" target="_blank" rel="noopener">Database Konami</a>
     </p>`;
   container.appendChild(box);
@@ -673,7 +686,7 @@ function setupInstall() {
   // iPhone / iPad: non esiste il prompt, mostriamo le istruzioni
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   if (ios) {
-    $("install-text").innerHTML = "Per installare Ruling Bot: tocca <strong>Condividi</strong> <span aria-hidden=\"true\">⬆️</span> e poi <strong>Aggiungi alla schermata Home</strong>.";
+    $("install-text").innerHTML = "Per installare <strong>YuGiOh Ruling App</strong>: tocca <strong>Condividi</strong> <span aria-hidden=\"true\">⬆️</span> e poi <strong>Aggiungi alla schermata Home</strong>.";
     btn.hidden = true;
     banner.hidden = false;
   }

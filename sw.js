@@ -1,7 +1,7 @@
 // Service worker: rende il sito installabile e utilizzabile offline.
 // - file del sito e indice carte: prima la rete (contenuti aggiornati), poi la cache se offline;
 // - dettagli delle carte (data/cards/*): prima la cache, aggiornata in background.
-const CACHE = "ruling-bot-v2";
+const CACHE = "yugioh-ruling-app-v3";
 const SHELL = [
   "./",
   "index.html",
@@ -11,6 +11,7 @@ const SHELL = [
   "vendor/marked.min.js",
   "vendor/purify.min.js",
   "icons/icon-192.png",
+  "icons/icon.svg",
   "faq/domande.md",
   "knowledge/01-regole-base.md",
   "knowledge/02-catena-e-timing.md",

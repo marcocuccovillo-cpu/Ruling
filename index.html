@@ -2,87 +2,113 @@
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ruling Bot · Yu-Gi-Oh!</title>
-  <meta name="description" content="Cerca i ruling di Yu-Gi-Oh!: domande frequenti, regolamento e testo ufficiale delle carte.">
-  <meta name="theme-color" content="#5b2fc0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>YuGiOh Ruling App</title>
+  <meta name="description" content="Ruling di Yu-Gi-Oh!: domande frequenti, regolamento e testo ufficiale delle carte. Gratis e offline.">
+  <meta name="theme-color" content="#120c2e">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Ruling Bot">
+  <meta name="apple-mobile-web-app-title" content="YuGiOh Ruling App">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="stylesheet" href="style.css">
   <script src="vendor/marked.min.js"></script>
   <script src="vendor/purify.min.js"></script>
 </head>
 <body>
-  <header class="top">
-    <div class="brand">
-      <span class="logo" aria-hidden="true">⚖️</span>
-      <div>
-        <h1>Ruling Bot</h1>
-        <p class="tagline">Ruling di Yu-Gi-Oh! · gratis, senza registrazione</p>
-      </div>
+  <div class="app">
+    <header class="top">
+      <a class="brand" href="./" aria-label="YuGiOh Ruling App, home">
+        <img src="icons/icon.svg" alt="" width="44" height="44">
+        <span>
+          <span class="brand-name">YuGiOh <em>Ruling</em> App</span>
+          <span class="tagline">Il giudice tascabile per i tuoi duelli</span>
+        </span>
+      </a>
+      <nav class="tabs" role="tablist" aria-label="Sezioni">
+        <button type="button" role="tab" data-tab="ask" aria-selected="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+          <span>Chiedi</span>
+        </button>
+        <button type="button" role="tab" data-tab="cards" aria-selected="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><rect x="8" y="6" width="8" height="6" rx="1"/><path d="M8 15h8M8 18h5"/></svg>
+          <span>Carte</span>
+        </button>
+        <button type="button" role="tab" data-tab="rules" aria-selected="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h7M8 11h7"/></svg>
+          <span>Regolamento</span>
+        </button>
+      </nav>
+    </header>
+
+    <div id="install-banner" class="install" hidden>
+      <img src="icons/icon-192.png" alt="" width="40" height="40">
+      <span id="install-text">Installa <strong>YuGiOh Ruling App</strong> sulla schermata Home: si apre come un'app e funziona anche offline.</span>
+      <span class="install-actions">
+        <button id="install-btn" type="button">Installa</button>
+        <button id="install-close" type="button" class="link" aria-label="Chiudi">Non ora</button>
+      </span>
     </div>
-    <nav class="tabs" role="tablist">
-      <button type="button" role="tab" data-tab="ask" aria-selected="true">Chiedi</button>
-      <button type="button" role="tab" data-tab="cards" aria-selected="false">Carte</button>
-      <button type="button" role="tab" data-tab="rules" aria-selected="false">Regolamento</button>
-    </nav>
-  </header>
 
-  <div id="install-banner" class="install" hidden>
-    <span id="install-text">Installa Ruling Bot sulla schermata Home per aprirlo come un'app, anche offline.</span>
-    <span class="install-actions">
-      <button id="install-btn" type="button">Installa</button>
-      <button id="install-close" type="button" class="link" aria-label="Chiudi">Non ora</button>
-    </span>
-  </div>
+    <main>
+      <!-- CHIEDI -->
+      <section id="tab-ask" class="tab">
+        <div class="hero">
+          <h1>Qual è il tuo dubbio di <span class="gold">ruling</span>?</h1>
+          <form id="ask" class="searchbar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+            <input id="question" type="search" autocomplete="off" maxlength="300"
+                   placeholder="Es. Ash può rispondere a Vaso dei Desideri?" aria-label="La tua domanda">
+            <button type="submit">Cerca</button>
+          </form>
+          <p class="hint">Scrivi con parole tue. Le carte citate, anche abbreviate (<code>ash</code>, <code>imperm</code>, <code>veiler</code>), vengono riconosciute e mostrate con il testo ufficiale.</p>
+        </div>
 
-  <main>
-    <!-- CHIEDI -->
-    <section id="tab-ask" class="tab">
-      <form id="ask" class="searchbar">
-        <input id="question" type="search" autocomplete="off" maxlength="300"
-               placeholder="Es. Ash Blossom può rispondere a Vaso dei Desideri?" aria-label="La tua domanda">
-        <button type="submit">Cerca</button>
-      </form>
-      <p class="hint">Scrivi la domanda con parole tue. Le carte citate (anche abbreviate, es. <code>imperm</code>, <code>ash</code>) vengono riconosciute e mostrate con il testo ufficiale.</p>
+        <div id="results" aria-live="polite"></div>
 
-      <div id="results" aria-live="polite"></div>
-
-      <section id="welcome">
-        <h2>Domande frequenti</h2>
-        <div id="popular" class="examples"></div>
+        <section id="welcome">
+          <h2 class="label">Domande frequenti</h2>
+          <div id="popular" class="examples"></div>
+        </section>
       </section>
-    </section>
 
-    <!-- CARTE -->
-    <section id="tab-cards" class="tab" hidden>
-      <form id="card-form" class="searchbar">
-        <input id="card-name" type="search" autocomplete="off" maxlength="100"
-               placeholder="Nome della carta (italiano o inglese), anche parziale" aria-label="Nome della carta">
-        <button type="submit">Cerca carta</button>
-      </form>
-      <div id="card-suggestions" class="suggestions"></div>
-      <p class="hint" id="card-db-info">Testo ufficiale da YGOPRODeck, con link ai ruling su Yugipedia e al database Konami.</p>
-      <div id="card-results" aria-live="polite"></div>
-    </section>
+      <!-- CARTE -->
+      <section id="tab-cards" class="tab" hidden>
+        <div class="hero small">
+          <h1>Cerca una <span class="gold">carta</span></h1>
+          <form id="card-form" class="searchbar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+            <input id="card-name" type="search" autocomplete="off" maxlength="100"
+                   placeholder="Nome in italiano o inglese, anche parziale" aria-label="Nome della carta">
+            <button type="submit">Cerca</button>
+          </form>
+          <div id="card-suggestions" class="suggestions"></div>
+          <p class="hint" id="card-db-info">Testo ufficiale, con link ai ruling su Yugipedia e al database Konami.</p>
+        </div>
+        <div id="card-results" aria-live="polite"></div>
+      </section>
 
-    <!-- REGOLAMENTO -->
-    <section id="tab-rules" class="tab" hidden>
-      <input id="rules-filter" type="search" autocomplete="off" placeholder="Filtra il regolamento…" aria-label="Filtra il regolamento">
-      <div id="rules"></div>
-    </section>
-  </main>
+      <!-- REGOLAMENTO -->
+      <section id="tab-rules" class="tab" hidden>
+        <div class="hero small">
+          <h1>Il <span class="gold">regolamento</span></h1>
+          <div class="searchbar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+            <input id="rules-filter" type="search" autocomplete="off" placeholder="Filtra: catena, Damage Step, Xyz…" aria-label="Filtra il regolamento">
+          </div>
+        </div>
+        <div id="rules"></div>
+      </section>
+    </main>
 
-  <footer class="disclaimer">
-    Risposte da una raccolta di ruling curata a mano: possono essere incomplete. In torneo vale la decisione del giudice.
-    Testi delle carte: <a href="https://ygoprodeck.com/" target="_blank" rel="noopener">YGOPRODeck</a>.
-    Sito non ufficiale, non affiliato a Konami.
-  </footer>
+    <footer class="disclaimer">
+      Raccolta di ruling curata a mano: può essere incompleta. In torneo vale la decisione del giudice.<br>
+      Testi delle carte: <a href="https://ygoprodeck.com/" target="_blank" rel="noopener">YGOPRODeck</a>.
+      App non ufficiale, non affiliata a Konami.
+    </footer>
+  </div>
 
   <script src="app.js"></script>
 </body>
