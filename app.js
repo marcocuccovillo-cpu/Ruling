@@ -267,19 +267,190 @@ function runSearch(q) {
     secs.forEach((h) => results.appendChild(sectionCard(h.doc)));
   }
 
-  const cardNames = quotedCardNames(q);
-  if (cardNames.length) {
-    results.appendChild(el("h2", "label", "Carte citate"));
-    const box = el("div", "cards");
-    results.appendChild(box);
-    cardNames.forEach((name) => showCards(name, box, 1));
-  }
-
+  const cardsBox = el("div", "cards");
+  results.appendChild(cardsBox);
   results.insertAdjacentHTML("beforeend", externalSearchLinks(q));
+  showCardsInQuestion(q, cardsBox, !strong);
 }
 
-// ---------------------------------------------------------------- Carte (YGOPRODeck)
+// Carte citate nella domanda: tra virgolette oppure riconosciute dal database locale.
+async function showCardsInQuestion(q, box, first) {
+  const index = await loadCardIndex();
+  const quoted = quotedCardNames(q);
+  const ids = new Set();
+  const found = [];
+  if (index) {
+    for (const name of quoted) {
+      const [e] = searchCardIndex(index, name, 1);
+      if (e && !ids.has(e.id)) { ids.add(e.id); found.push(e); }
+    }
+    for (const e of detectCardsInText(index, q)) if (!ids.has(e.id)) { ids.add(e.id); found.push(e); }
+  }
+  if (!found.length && !(quoted.length && !index)) return;
+  const label = el("h2", "label", "Carte citate");
+  box.appendChild(label);
+  // se non c'è una risposta esatta, le carte sono l'informazione più utile: mettile in cima
+  if (first) box.parentElement.prepend(box);
+  if (index) for (const e of found.slice(0, 4)) await showCardById(index, e.id, box);
+  else for (const name of quoted) await showCards(name, box, 1);
+}
 
+// ---------------------------------------------------------------- Carte
+
+// Database locale (generato da scripts/build-cards.mjs al momento della pubblicazione).
+// Se non c'è (es. in locale senza averlo generato) si usa direttamente l'API di YGOPRODeck.
+let cardIndexPromise = null;
+const shardCache = new Map();
+
+// Parole del gioco che non vanno scambiate per nomi di carte quando appaiono in una domanda.
+const GAME_WORDS = new Set([
+  "mostro", "mostri", "monster", "carta", "carte", "card", "deck", "extra deck", "token", "link", "synchro", "xyz",
+  "fusion", "fusione", "ritual", "rituale", "tuner", "pendulum", "battle", "battaglia", "flip", "effetto", "effect",
+  "terreno", "field", "turno", "turn", "fase", "phase", "cimitero", "graveyard", "catena", "chain", "tributo",
+  "tribute", "magia", "spell", "trappola", "trap", "evocazione", "summon", "evocazione speciale", "special summon",
+  "danni", "damage", "attacco", "attack", "difesa", "defense", "mano", "hand", "costo", "cost", "bersaglio", "target",
+  "materiale", "material", "regola", "regole", "risposta", "domanda", "timing", "contatore", "counter",
+]);
+
+function loadCardIndex() {
+  cardIndexPromise ??= fetch("data/cards-index.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .then((data) => {
+      if (!data?.cards?.length) return null;
+      const entries = data.cards.map(([id, en, it]) => ({ id, en, it, nen: normalize(en), nit: it ? normalize(it) : "" }));
+      // Nomi brevi automatici: la parte prima di " & " o "," (es. "Ash Blossom", "Nibiru", "Ghost Ogre")
+      const shortCount = new Map();
+      const short = (n) => n.split(/ & |, /)[0];
+      for (const e of entries) for (const name of [e.en, e.it]) {
+        if (!name || !/ & |, /.test(name)) continue;
+        const s = normalize(short(name));
+        shortCount.set(s, (shortCount.get(s) ?? 0) + 1);
+      }
+      for (const e of entries) {
+        e.aliases = [e.en, e.it].filter((n) => n && / & |, /.test(n)).map((n) => normalize(short(n)))
+          .filter((s) => s.length >= 5 && shortCount.get(s) === 1 && !GAME_WORDS.has(s));
+      }
+      return { shards: data.shards, entries, byId: new Map(entries.map((e) => [e.id, e])) };
+    })
+    .catch(() => null);
+  return cardIndexPromise;
+}
+
+// Soprannomi comuni → nome inglese ufficiale
+const CARD_ALIASES = {
+  "ash": "Ash Blossom & Joyous Spring",
+  "imperm": "Infinite Impermanence",
+  "impermanenza": "Infinite Impermanence",
+  "veiler": "Effect Veiler",
+  "maxx c": 'Maxx "C"',
+  "cbtg": "Called by the Grave",
+  "mst": "Mystical Space Typhoon",
+  "bottomless": "Bottomless Trap Hole",
+  "torrential": "Torrential Tribute",
+  "droplet": "Forbidden Droplet",
+  "dark ruler": "Dark Ruler No More",
+  "ttt": "Triple Tactics Talent",
+  "lancea": "Ancestagon Lancea",
+  "nibiru": "Nibiru, the Primal Being",
+  "droll": "Droll & Lock Bird",
+  "reborn": "Monster Reborn",
+};
+
+function trigrams(s) {
+  const t = new Set(), p = `  ${s} `;
+  for (let i = 0; i < p.length - 2; i++) t.add(p.slice(i, i + 3));
+  return t;
+}
+function similarity(a, bSet) {
+  const A = trigrams(a);
+  let inter = 0;
+  for (const g of A) if (bSet.has(g)) inter++;
+  return (2 * inter) / (A.size + bSet.size);
+}
+
+// Ricerca per nome (italiano o inglese), tollerante a nomi parziali e piccoli errori di battitura.
+function searchCardIndex(index, query, limit = 10) {
+  const q = normalize(query);
+  if (!q) return [];
+  const aliased = CARD_ALIASES[q] && index.entries.find((e) => e.en === CARD_ALIASES[q]);
+  const words = q.split(" ");
+  const scored = [];
+  for (const e of index.entries) {
+    let best = 0;
+    for (const n of [e.nen, e.nit]) {
+      if (!n) continue;
+      let s = 0;
+      if (n === q) s = 100;
+      else if (n.startsWith(q)) s = 85;
+      else if (` ${n} `.includes(` ${q} `)) s = 75;
+      else if (n.includes(q)) s = 65;
+      else if (words.length > 1 && words.every((w) => ` ${n}`.includes(" " + w))) s = 55;
+      if (s) s -= Math.min(10, n.length / 20); // a parità, nomi più corti prima
+      best = Math.max(best, s);
+    }
+    if (best) scored.push({ e, s: best });
+  }
+  if (!scored.length && q.length >= 4) {
+    // nessuna corrispondenza diretta: somiglianza per trigrammi (errori di battitura)
+    const Q = trigrams(q);
+    for (const e of index.entries) {
+      const s = Math.max(similarity(e.nen, Q), e.nit ? similarity(e.nit, Q) : 0);
+      if (s >= 0.45) scored.push({ e, s: 40 * s });
+    }
+  }
+  scored.sort((a, b) => b.s - a.s);
+  const out = scored.slice(0, limit).map((x) => x.e);
+  if (aliased && !out.includes(aliased)) out.unshift(aliased);
+  return out.slice(0, limit);
+}
+
+// Riconosce le carte citate in una domanda (anche senza virgolette).
+function detectCardsInText(index, text) {
+  const hay = ` ${normalize(text)} `;
+  const hits = new Map();
+  const add = (e, len) => { if (!hits.has(e.id) || hits.get(e.id) < len) hits.set(e.id, len); };
+  for (const e of index.entries) {
+    for (const n of [e.nen, e.nit, ...e.aliases]) {
+      if (!n || n.length < 4 || /^\d+$/.test(n)) continue;
+      if (!n.includes(" ") && (n.length < 6 || GAME_WORDS.has(n))) continue;
+      if (GAME_WORDS.has(n)) continue;
+      if (hay.includes(` ${n} `)) add(e, n.length);
+    }
+  }
+  for (const [alias, en] of Object.entries(CARD_ALIASES)) {
+    if (hay.includes(` ${alias} `)) {
+      const e = index.entries.find((x) => x.en === en);
+      if (e) add(e, alias.length);
+    }
+  }
+  // tra corrispondenze sovrapposte (es. "Dark Magician" dentro "Dark Magician Girl") tieni la più lunga
+  const list = [...hits].map(([id, len]) => ({ e: index.byId.get(id), len })).sort((a, b) => b.len - a.len);
+  const kept = [];
+  for (const h of list) {
+    const names = [h.e.nen, h.e.nit].filter(Boolean);
+    const inside = kept.some((k) => [k.e.nen, k.e.nit].some((kn) => kn && names.some((n) => kn !== n && kn.includes(n))));
+    if (!inside) kept.push(h);
+  }
+  return kept.slice(0, 4).map((h) => h.e);
+}
+
+async function getCardDetails(index, id) {
+  const shard = id % index.shards;
+  if (!shardCache.has(shard)) {
+    shardCache.set(shard, fetch(`data/cards/${shard}.json`).then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    }).catch((err) => { shardCache.delete(shard); throw err; }));
+  }
+  const d = (await shardCache.get(shard))[id];
+  if (!d) throw new Error("carta non trovata");
+  return {
+    id, name: d.n, type: d.t, desc: d.x, itName: d.ni, itDesc: d.xi, race: d.r, attribute: d.a,
+    level: d.l, linkval: d.lk, linkmarkers: d.lm, scale: d.s, atk: d.atk, def: d.def, archetype: d.ar,
+  };
+}
+
+// --- riserva: API YGOPRODeck (usata solo se il database locale non è disponibile)
 async function ygo(params) {
   const res = await fetch(`${YGO_API}?${new URLSearchParams(params)}`);
   if (res.status === 400) return []; // nessuna carta trovata
@@ -287,24 +458,16 @@ async function ygo(params) {
   return (await res.json()).data ?? [];
 }
 
-async function findCards(name) {
-  const attempts = [
-    { name, language: "it" }, { name },
-    { fname: name, language: "it" }, { fname: name },
-  ];
-  for (const p of attempts) {
+async function findCardsOnline(name) {
+  for (const p of [{ fname: name, language: "it" }, { fname: name }]) {
     const cards = await ygo(p);
-    if (cards.length) return { cards, italian: p.language === "it" };
+    if (cards.length) {
+      return cards.map((c) => (p.language === "it"
+        ? { ...c, itName: c.name, itDesc: c.desc, name: null }
+        : c));
+    }
   }
-  return { cards: [], italian: false };
-}
-
-async function englishName(card, italian) {
-  if (!italian) return card.name;
-  try {
-    const [en] = await ygo({ id: card.id });
-    return en?.name ?? card.name;
-  } catch { return card.name; }
+  return [];
 }
 
 function cardStats(c) {
@@ -318,36 +481,104 @@ function cardStats(c) {
   return bits.join(" · ");
 }
 
-async function renderCard(c, italian, container) {
+const formatDesc = (t) => esc(t).replace(/\n/g, "<br>");
+
+function renderCard(c, container) {
   const box = el("article", "card");
-  box.innerHTML = `<h3>${esc(c.name)}</h3><p class="stats">${esc(cardStats(c))}</p>
-    <p class="desc">${esc(c.desc).replace(/\n/g, "<br>")}</p><p class="links">Carico i link…</p>`;
-  container.appendChild(box);
-  const en = await englishName(c, italian);
+  const title = c.itName || c.name;
+  const sub = c.itName && c.name && c.itName !== c.name ? `<p class="en">${esc(c.name)}</p>` : "";
+  const mainDesc = c.itDesc || c.desc;
+  const enDesc = c.itDesc && c.desc
+    ? `<details class="en-text"><summary>Testo inglese</summary><p class="desc">${formatDesc(c.desc)}</p></details>` : "";
+  const en = c.name || c.itName;
   const wiki = encodeURIComponent(en.replace(/ /g, "_"));
-  box.querySelector(".links").innerHTML = `
-    <a href="https://yugipedia.com/wiki/Card_Rulings:${wiki}" target="_blank" rel="noopener">Ruling (Yugipedia)</a> ·
-    <a href="https://yugipedia.com/wiki/${wiki}" target="_blank" rel="noopener">Scheda</a> ·
-    <a href="https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=1&sess=1&keyword=${encodeURIComponent(en)}&request_locale=it" target="_blank" rel="noopener">Database Konami</a>
-    ${italian && en !== c.name ? `<span class="en">(${esc(en)})</span>` : ""}`;
+  box.innerHTML = `<h3>${esc(title)}</h3>${sub}<p class="stats">${esc(cardStats(c))}</p>
+    <p class="desc">${formatDesc(mainDesc)}</p>${enDesc}
+    <p class="links">
+      <a href="https://yugipedia.com/wiki/Card_Rulings:${wiki}" target="_blank" rel="noopener">Ruling (Yugipedia)</a> ·
+      <a href="https://yugipedia.com/wiki/${wiki}" target="_blank" rel="noopener">Scheda</a> ·
+      <a href="https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=1&sess=1&keyword=${encodeURIComponent(en)}&request_locale=it" target="_blank" rel="noopener">Database Konami</a>
+    </p>`;
+  container.appendChild(box);
+  return box;
 }
 
-async function showCards(name, container, max = 5) {
-  const status = el("p", "status", `Cerco "${esc(name)}"…`);
+async function showCardById(index, id, container) {
+  const status = el("p", "status", "Carico la carta…");
   container.appendChild(status);
   try {
-    const { cards, italian } = await findCards(name);
+    renderCard(await getCardDetails(index, id), container);
+  } catch (err) {
+    container.appendChild(el("p", "notice", `Impossibile caricare la carta (${esc(err.message)}).`));
+  } finally {
     status.remove();
-    if (!cards.length) {
+  }
+}
+
+// Mostra le carte che corrispondono a `name` (prima il database locale, poi l'API online).
+async function showCards(name, container, max = 1) {
+  const index = await loadCardIndex();
+  if (index) {
+    const found = searchCardIndex(index, name, max);
+    if (!found.length) {
       container.appendChild(el("p", "notice", `Nessuna carta trovata per "${esc(name)}". Prova con il nome inglese o una parte del nome.`));
       return;
     }
-    for (const c of cards.slice(0, max)) await renderCard(c, italian, container);
-    if (cards.length > max) container.appendChild(el("p", "hint", `Altri ${cards.length - max} risultati: specifica meglio il nome.`));
-  } catch (err) {
-    status.remove();
-    container.appendChild(el("p", "notice", `Impossibile contattare il database delle carte (${esc(err.message)}). Riprova più tardi.`));
+    for (const e of found) await showCardById(index, e.id, container);
+    return;
   }
+  const status = el("p", "status", `Cerco "${esc(name)}"…`);
+  container.appendChild(status);
+  try {
+    const cards = await findCardsOnline(name);
+    if (!cards.length) container.appendChild(el("p", "notice", `Nessuna carta trovata per "${esc(name)}".`));
+    cards.slice(0, max).forEach((c) => renderCard(c, container));
+  } catch (err) {
+    container.appendChild(el("p", "notice", `Impossibile contattare il database delle carte (${esc(err.message)}). Riprova più tardi.`));
+  } finally {
+    status.remove();
+  }
+}
+
+// Scheda "Carte": suggerimenti mentre scrivi + dettaglio della carta scelta.
+function setupCardTab() {
+  const input = $("card-name"), list = $("card-suggestions"), out = $("card-results");
+  let timer;
+  const pick = async (index, e) => {
+    list.innerHTML = "";
+    input.value = e.it || e.en;
+    out.innerHTML = "";
+    await showCardById(index, e.id, out);
+  };
+  input.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      const index = await loadCardIndex();
+      list.innerHTML = "";
+      const q = input.value.trim();
+      if (!index || q.length < 2) return;
+      for (const e of searchCardIndex(index, q, 8)) {
+        const b = el("button", "suggestion");
+        b.type = "button";
+        b.innerHTML = e.it ? `${esc(e.it)} <span class="en">${esc(e.en)}</span>` : esc(e.en);
+        b.addEventListener("click", () => pick(index, e));
+        list.appendChild(b);
+      }
+    }, 120);
+  });
+  $("card-form").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const name = input.value.trim();
+    if (!name) return;
+    list.innerHTML = "";
+    out.innerHTML = "";
+    await showCards(name, out, 5);
+  });
+  loadCardIndex().then((index) => {
+    $("card-db-info").textContent = index
+      ? `${index.entries.length.toLocaleString("it-IT")} carte nel database, disponibili anche offline.`
+      : "Database locale non disponibile: le carte vengono cercate online su YGOPRODeck.";
+  });
 }
 
 // ---------------------------------------------------------------- Regolamento
@@ -398,13 +629,7 @@ async function init() {
   });
 
   $("ask").addEventListener("submit", (e) => { e.preventDefault(); runSearch($("question").value); });
-  $("card-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const name = $("card-name").value.trim();
-    if (!name) return;
-    $("card-results").innerHTML = "";
-    showCards(name, $("card-results"));
-  });
+  setupCardTab();
 
   renderRules();
 
@@ -412,4 +637,47 @@ async function init() {
   if (q) { $("question").value = q; runSearch(q); }
 }
 
+// ---------------------------------------------------------------- installazione (PWA)
+
+function setupInstall() {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+  const banner = $("install-banner"), btn = $("install-btn");
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  let dismissed = false;
+  try { dismissed = localStorage.getItem("install-dismissed") === "1"; } catch {}
+  if (standalone || dismissed) return;
+
+  $("install-close").addEventListener("click", () => {
+    banner.hidden = true;
+    try { localStorage.setItem("install-dismissed", "1"); } catch {}
+  });
+
+  // Android / Chrome / Edge: prompt di installazione nativo
+  let deferred = null;
+  addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferred = e;
+    banner.hidden = false;
+  });
+  btn.addEventListener("click", async () => {
+    if (!deferred) return;
+    deferred.prompt();
+    await deferred.userChoice;
+    deferred = null;
+    banner.hidden = true;
+  });
+  addEventListener("appinstalled", () => { banner.hidden = true; });
+
+  // iPhone / iPad: non esiste il prompt, mostriamo le istruzioni
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (ios) {
+    $("install-text").innerHTML = "Per installare Ruling Bot: tocca <strong>Condividi</strong> <span aria-hidden=\"true\">⬆️</span> e poi <strong>Aggiungi alla schermata Home</strong>.";
+    btn.hidden = true;
+    banner.hidden = false;
+  }
+}
+
+setupInstall();
 init();

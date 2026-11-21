@@ -1,1 +1,4 @@
 .DS_Store
+# generati dalla GitHub Action di pubblicazione
+data/
+_site/

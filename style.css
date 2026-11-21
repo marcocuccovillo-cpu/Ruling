@@ -160,3 +160,31 @@ main { flex: 1; padding: 20px 0; }
   .tabs button { flex: 1; }
   .searchbar button { padding: 0 14px; }
 }
+
+/* suggerimenti carte */
+.suggestions { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.suggestion {
+  font: inherit; text-align: left; cursor: pointer;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 8px 12px;
+}
+.suggestion:hover, .suggestion:focus { border-color: var(--accent); outline: none; }
+.suggestion .en, .card .en { color: var(--muted); font-size: .85rem; }
+.card p.en { margin: 0 0 4px; }
+.en-text { margin: 0 0 8px; font-size: .92rem; }
+.en-text summary { cursor: pointer; color: var(--muted); }
+
+/* banner di installazione */
+.install {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;
+  background: var(--soft); border: 1px solid var(--border); border-radius: 12px;
+  padding: 10px 14px; margin-top: 14px; font-size: .92rem;
+}
+.install[hidden] { display: none; }
+.install-actions { display: flex; gap: 8px; align-items: center; }
+.install button {
+  font: inherit; cursor: pointer; border: 0; border-radius: 9px; padding: 6px 14px;
+  background: var(--accent); color: var(--accent-text); font-weight: 600;
+}
+.install button.link { background: transparent; color: var(--muted); font-weight: 400; padding: 6px 4px; }

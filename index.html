@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ruling Bot · Yu-Gi-Oh!</title>
   <meta name="description" content="Cerca i ruling di Yu-Gi-Oh!: domande frequenti, regolamento e testo ufficiale delle carte.">
+  <meta name="theme-color" content="#5b2fc0">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Ruling Bot">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="stylesheet" href="style.css">
   <script src="vendor/marked.min.js"></script>
   <script src="vendor/purify.min.js"></script>
@@ -25,6 +33,14 @@
     </nav>
   </header>
 
+  <div id="install-banner" class="install" hidden>
+    <span id="install-text">Installa Ruling Bot sulla schermata Home per aprirlo come un'app, anche offline.</span>
+    <span class="install-actions">
+      <button id="install-btn" type="button">Installa</button>
+      <button id="install-close" type="button" class="link" aria-label="Chiudi">Non ora</button>
+    </span>
+  </div>
+
   <main>
     <!-- CHIEDI -->
     <section id="tab-ask" class="tab">
@@ -33,7 +49,7 @@
                placeholder="Es. Ash Blossom può rispondere a Vaso dei Desideri?" aria-label="La tua domanda">
         <button type="submit">Cerca</button>
       </form>
-      <p class="hint">Scrivi la domanda con parole tue. Metti i nomi delle carte tra virgolette (es. <code>"Impermanenza Infinita"</code>) per vederne anche il testo ufficiale.</p>
+      <p class="hint">Scrivi la domanda con parole tue. Le carte citate (anche abbreviate, es. <code>imperm</code>, <code>ash</code>) vengono riconosciute e mostrate con il testo ufficiale.</p>
 
       <div id="results" aria-live="polite"></div>
 
@@ -47,10 +63,11 @@
     <section id="tab-cards" class="tab" hidden>
       <form id="card-form" class="searchbar">
         <input id="card-name" type="search" autocomplete="off" maxlength="100"
-               placeholder="Nome della carta (italiano o inglese)" aria-label="Nome della carta">
+               placeholder="Nome della carta (italiano o inglese), anche parziale" aria-label="Nome della carta">
         <button type="submit">Cerca carta</button>
       </form>
-      <p class="hint">Testo ufficiale da YGOPRODeck, con link ai ruling su Yugipedia e al database Konami.</p>
+      <div id="card-suggestions" class="suggestions"></div>
+      <p class="hint" id="card-db-info">Testo ufficiale da YGOPRODeck, con link ai ruling su Yugipedia e al database Konami.</p>
       <div id="card-results" aria-live="polite"></div>
     </section>
 
