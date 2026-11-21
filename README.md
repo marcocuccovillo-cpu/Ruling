@@ -1,51 +1,47 @@
 # ⚖️ Ruling Bot — Yu-Gi-Oh!
 
-Webapp in cui fai una domanda sui **ruling di Yu-Gi-Oh!** e un bot basato su Claude risponde
-con una spiegazione ragionata (risposta breve, spiegazione, esempio di catena, affidabilità).
+Sito **statico e gratuito** per cercare i ruling di Yu-Gi-Oh!: nessuna IA, nessun server, nessuna chiave API.
 
-## Come funziona
-- **Knowledge base** (`knowledge/*.md`): regolamento attuale (Master Rule), catena e Velocità, SEGOC,
-  "Quando" vs "Se" e perdita del timing, PSCT (costo/bersaglio/effetto), OPT, annullamenti, battaglia e
-  Damage Step, Evocazioni (Fusion/Synchro/Xyz/Pendulum/Link, evocazione corretta, Nomi), ruling delle staple
-  più giocate e glossario IT/EN. Viene inviata come system prompt con **prompt caching**.
-- **Strumento `cerca_carta`**: il bot legge il testo ufficiale delle carte citate dall'API pubblica di
-  [YGOPRODeck](https://ygoprodeck.com/api-guide/) (nomi in italiano o inglese).
-- **Ricerca web** (opzionale): web search/fetch limitati a siti di ruling (Yugipedia, db.ygoresources.com,
-  YGOrganization, yugioh-card.com, YGOPRODeck) per i ruling specifici delle carte.
-- Risposte in **streaming**, conversazione multi-turno, limite di richieste per IP.
+## Cosa fa
+- **Chiedi**: scrivi la domanda con parole tue. La ricerca (tutta nel browser, con sinonimi italiano/inglese
+  e gergo come "GY", "imperm", "chainare") trova la risposta nella raccolta di domande frequenti
+  e le sezioni pertinenti del regolamento. I nomi di carte tra virgolette mostrano anche il testo ufficiale.
+- **Carte**: testo ufficiale delle carte (nomi italiani o inglesi) dall'API gratuita di
+  [YGOPRODeck](https://ygoprodeck.com/api-guide/), con link ai ruling su Yugipedia e al database Konami.
+- **Regolamento**: tutta la knowledge base consultabile e filtrabile.
+- Le ricerche sono condivisibili: l'URL contiene la domanda (`?q=...`).
 
-Per ampliare le conoscenze del bot basta aggiungere/modificare file `.md` in `knowledge/` e riavviare.
+## Pubblicarlo gratis con GitHub Pages
+1. Sul repository: **Settings → Pages**.
+2. In *Build and deployment* scegli **Deploy from a branch**, branch **main**, cartella **/ (root)** → Save.
+3. Dopo un minuto il sito è online su `https://<utente>.github.io/Ruling/`.
 
-## Avvio locale
-Richiede Node.js 22+ e una chiave API Anthropic.
-
+## Provarlo in locale
+Serve un piccolo server (aprire `index.html` con doppio clic non basta, perché il sito carica i file `.md`):
 ```bash
-npm install
-cp .env.example .env   # inserisci ANTHROPIC_API_KEY
-npm start              # http://localhost:3000
+python3 -m http.server 8000
+# poi apri http://localhost:8000
 ```
 
-### Variabili d'ambiente
-| Variabile | Default | Descrizione |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | — | Chiave API (obbligatoria) |
-| `PORT` | `3000` | Porta HTTP |
-| `CLAUDE_MODEL` | `claude-opus-5-5` | Modello |
-| `CLAUDE_EFFORT` | `high` | Effort: `low`…`max` |
-| `ENABLE_WEB_SEARCH` | `true` | Ricerca web sui siti di ruling (va abilitata anche nella Console Anthropic) |
-| `RATE_LIMIT_PER_HOUR` | `30` | Domande per IP all'ora |
-
-## Docker
-```bash
-docker build -t ruling-bot .
-docker run -p 3000:3000 -e ANTHROPIC_API_KEY=sk-ant-... ruling-bot
-```
+## Aggiungere ruling
+- **Domande frequenti** → `faq/domande.md`. Ogni domanda è un blocco:
+  ```markdown
+  ## Testo della domanda?
+  tag: parole chiave, nomi delle carte in italiano e inglese, sinonimi
+  Risposta in Markdown...
+  ```
+  I tag sono importanti: aggiungi i modi diversi in cui qualcuno potrebbe porre la domanda.
+- **Regolamento** → `knowledge/*.md`, una sezione per ogni titolo `##`.
+  Per aggiungere un nuovo file, inseriscilo anche nella lista `KNOWLEDGE_FILES` in `app.js`.
+- Nuovi sinonimi o termini di gergo → lista `SYNONYMS` in `app.js`.
 
 ## Struttura
 ```
-server.js          # Express: /api/ask (SSE), tool loop con Claude, strumento cerca_carta
-knowledge/         # knowledge base dei ruling (Markdown)
-public/            # frontend (HTML/CSS/JS, marked + DOMPurify in vendor/)
+index.html, style.css, app.js   # il sito
+faq/domande.md                  # domande frequenti con risposta
+knowledge/                      # regolamento (Markdown)
+vendor/                         # marked + DOMPurify (rendering Markdown sicuro)
 ```
 
-> Le risposte sono generate da un'IA e possono contenere errori: in torneo vale sempre la decisione del giudice.
+> Raccolta curata a mano: può essere incompleta. In torneo vale sempre la decisione del giudice.
+> Sito non ufficiale, non affiliato a Konami.

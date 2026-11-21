@@ -24,7 +24,7 @@
 - Un mostro coperto che viene scoperto da un attacco non è stato "Evocato tramite Flip" (non è una Flip Summon) ma i suoi effetti FLIP si attivano.
 - Girare coperto un mostro tramite effetto non lo fa uscire dal terreno, ma tutti gli effetti che gli si applicavano mentre era scoperto (bonus, annullamenti, equipaggiamenti, contatori) terminano; un effetto "soft OPT" di quella copia può essere riutilizzato, perché la carta viene trattata come nuova una volta di nuovo scoperta.
 
-## 3.4 Ruling di carte molto giocate (staple). Verifica sempre il testo ufficiale aggiornato con lo strumento di ricerca carte.
+## 3.4 Ruling di carte molto giocate (staple). Verifica sempre il testo ufficiale aggiornato nella scheda "Carte".
 - **Ash Blossom & Joyous Spring** ("Ash Blossom & Gioiosa Primavera"): Effetto Rapido dalla mano. Quando viene attivata una carta o un effetto che include almeno uno tra: aggiungere carte dal Deck alla mano, Evocare Specialmente dal Deck, mandare carte dal Deck al Cimitero → puoi scartarla; **annulla quell'effetto** (non l'attivazione). Hard OPT. Note:
   - Risponde a effetti che "includono" quelle azioni anche se sono solo una parte dell'effetto (es. effetti con più azioni tra cui una ricerca dal Deck). Non risponde a costi: se mandare dal Deck al Cimitero è un costo, Ash non può rispondere per quel motivo (il costo è già pagato e non è parte dell'effetto).
   - "Pescare" non è "aggiungere dal Deck alla mano": Ash non risponde alle pescate (es. "Vaso dell'Avidità", "Vaso dei Desideri").
@@ -46,7 +46,7 @@
 - **Pot of Greed / Pot of Desires / Pot of Extravagance / Pot of Prosperity**: carte di pescata o "excavate". "Vaso dei Desideri" ha il costo di bandire le 10 carte in cima al Deck coperte; se non puoi bandirle non puoi attivarlo.
 - **Monster Reborn** ("Mostro Resuscitato"): rianima un mostro da qualsiasi Cimitero; il mostro deve essere stato evocato correttamente se è un mostro dell'Extra Deck/Nomi. È un'Evocazione Speciale tramite effetto (usa la catena).
 
-> Queste descrizioni sono riassunti: in caso di dubbio si deve consultare il testo ufficiale della carta (usa lo strumento `cerca_carta`) e i ruling ufficiali.
+> Queste descrizioni sono riassunti: in caso di dubbio si deve consultare il testo ufficiale della carta (scheda "Carte") e i ruling ufficiali.
 
 ## 3.5 Casi pratici comuni (FAQ)
 - **Posso attivare una Trappola nel turno in cui la Posiziono?** No, salvo che la carta lo permetta (es. "Puoi attivare questa carta nel turno in cui è stata Posizionata" o la puoi attivare dalla mano).

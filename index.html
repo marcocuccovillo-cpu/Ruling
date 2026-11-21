@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ruling Bot · Yu-Gi-Oh!</title>
+  <meta name="description" content="Cerca i ruling di Yu-Gi-Oh!: domande frequenti, regolamento e testo ufficiale delle carte.">
+  <link rel="stylesheet" href="style.css">
+  <script src="vendor/marked.min.js"></script>
+  <script src="vendor/purify.min.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">⚖️</span>
+      <div>
+        <h1>Ruling Bot</h1>
+        <p class="tagline">Ruling di Yu-Gi-Oh! · gratis, senza registrazione</p>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="ask" aria-selected="true">Chiedi</button>
+      <button type="button" role="tab" data-tab="cards" aria-selected="false">Carte</button>
+      <button type="button" role="tab" data-tab="rules" aria-selected="false">Regolamento</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- CHIEDI -->
+    <section id="tab-ask" class="tab">
+      <form id="ask" class="searchbar">
+        <input id="question" type="search" autocomplete="off" maxlength="300"
+               placeholder="Es. Ash Blossom può rispondere a Vaso dei Desideri?" aria-label="La tua domanda">
+        <button type="submit">Cerca</button>
+      </form>
+      <p class="hint">Scrivi la domanda con parole tue. Metti i nomi delle carte tra virgolette (es. <code>"Impermanenza Infinita"</code>) per vederne anche il testo ufficiale.</p>
+
+      <div id="results" aria-live="polite"></div>
+
+      <section id="welcome">
+        <h2>Domande frequenti</h2>
+        <div id="popular" class="examples"></div>
+      </section>
+    </section>
+
+    <!-- CARTE -->
+    <section id="tab-cards" class="tab" hidden>
+      <form id="card-form" class="searchbar">
+        <input id="card-name" type="search" autocomplete="off" maxlength="100"
+               placeholder="Nome della carta (italiano o inglese)" aria-label="Nome della carta">
+        <button type="submit">Cerca carta</button>
+      </form>
+      <p class="hint">Testo ufficiale da YGOPRODeck, con link ai ruling su Yugipedia e al database Konami.</p>
+      <div id="card-results" aria-live="polite"></div>
+    </section>
+
+    <!-- REGOLAMENTO -->
+    <section id="tab-rules" class="tab" hidden>
+      <input id="rules-filter" type="search" autocomplete="off" placeholder="Filtra il regolamento…" aria-label="Filtra il regolamento">
+      <div id="rules"></div>
+    </section>
+  </main>
+
+  <footer class="disclaimer">
+    Risposte da una raccolta di ruling curata a mano: possono essere incomplete. In torneo vale la decisione del giudice.
+    Testi delle carte: <a href="https://ygoprodeck.com/" target="_blank" rel="noopener">YGOPRODeck</a>.
+    Sito non ufficiale, non affiliato a Konami.
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
